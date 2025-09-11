@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
+import axios from 'axios';
 
-// A reusable component for the typing indicator
 function TypingIndicator() {
   return (
     <div className="flex items-center space-x-2">
@@ -42,16 +42,29 @@ function AiChatPage() {
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const aiResponse = { 
-        id: Date.now() + 1, 
-        text: 'Thank you for sharing. It takes courage to open up. Can you tell me a little more about what\'s on your mind?', 
-        sender: 'ai',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setIsTyping(false);
-      setMessages(prev => [...prev, aiResponse]);
-    }, 2500);
+    axios.post('http://127.0.0.1:8000/api/chat/', { message: userMessage.text })
+      .then(response => {
+        const aiResponse = { 
+          id: Date.now() + 1, 
+          text: response.data.reply, 
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      })
+      .catch(error => {
+        console.error("Error fetching chatbot response:", error);
+        const errorResponse = {
+            id: Date.now() + 1, 
+            text: 'I seem to be having trouble connecting. Please try again later.', 
+            sender: 'ai',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      })
+      .finally(() => {
+        setIsTyping(false);
+      });
   };
 
   return (
@@ -61,11 +74,8 @@ function AiChatPage() {
           <Link to="/" className="text-blue-600 hover:underline z-10">
             &larr; Back to Dashboard
           </Link>
-          
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-            <h1 className="text-xl font-bold text-gray-800">
-              Willow
-            </h1>
+            <h1 className="text-xl font-bold text-gray-800">Willow</h1>
           </div>
           <div className="w-32"></div>
         </div>
