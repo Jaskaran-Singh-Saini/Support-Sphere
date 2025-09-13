@@ -5,6 +5,7 @@ venv/
 db.sqlite3
 /media/
 /static/
+.env
 
 # React / Node
 node_modules/

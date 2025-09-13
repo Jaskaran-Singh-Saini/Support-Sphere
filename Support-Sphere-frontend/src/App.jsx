@@ -23,6 +23,7 @@ import AdminVolunteerApplicationsPage from './pages/AdminVolunteerApplicationsPa
 import CurrentVolunteersPage from './pages/CurrentVolunteersPage';
 import CallPage from './pages/CallPage';
 import CounselorListPageAdmin from './pages/AdminCounselorListPage';
+import ReportConcernPage from './pages/ReportConcernPage';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
       <Route path="/admin/volunteer-applications" element={<AdminVolunteerApplicationsPage />} />
       <Route path="/admin/current-volunteers" element={<CurrentVolunteersPage />} />
       <Route path="/call/:counselorId" element={<CallPage />} />
+      <Route path="/report-concern" element={<ReportConcernPage />} />
       
 
       {/* Pages with the main header layout */}

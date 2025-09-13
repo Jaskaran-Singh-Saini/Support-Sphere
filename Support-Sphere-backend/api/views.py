@@ -1,22 +1,64 @@
-# from django.shortcuts import render
+import os
+import google.generativeai as genai
+from dotenv import load_dotenv
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-# Create your views here.
+load_dotenv()
+
+try:
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+except Exception as e:
+    print(f"Error configuring Gemini API: {e}")
+
 class ChatbotView(APIView):
     def post(self, request, *args, **kwargs):
-        user_message = request.data.get('message', '').lower()
-        response_text = "I'm here to listen. Could you tell me more about that?"
-
-        # Crisis Detection
-        if any(word in user_message for word in ['suicide', 'kill myself', 'self_harm', 'hopeless']):
-            response_text = "It sounds like you are in immediate distress. Please use the Emergency SOS button to connect with a helpline right away. Your safety is the priority"
-        #Rule-Based Response
-        elif 'anxious' in user_message or 'stress' in user_message:
-            response_text = "It sounds like you're feeling a lot of pressure. Many students feel this way. Have you considered trying a breathing exercise from our Self-Help section?"
-        elif 'exam' in user_message:
-            response_text = "Exam periods can be very stressful. Remember to take short breaks and ensure you're getting enough sleep. The GAD-7 assessment might also be helpful."
-        elif 'sad' in user_message or 'lonely' in user_message:
-            response_text = "I'm sorry to hear you're feeling down. Sometimes talking to others can help. Our Peers Forum is a safe space to connect."
+        chat_history = request.data.get('history', [])
         
+        if not chat_history:
+            return Response({'reply': 'I\'m sorry, I didn\'t receive a message.'})
+
+        user_message = chat_history[-1].get('text', '').lower()
+
+        # --- Hybrid Safety System (remains the same) ---
+        crisis_keywords = ['suicide', 'kill myself', 'self-harm', 'hopeless', 'end my life']
+        if any(word in user_message for word in crisis_keywords):
+            response_text = "It sounds like you are in immediate distress. Please use the Emergency SOS button to connect with a helpline right away. Your safety is the priority."
+            return Response({'reply': response_text})
+
+        # --- Format the history for the AI ---
+        formatted_history = ""
+        for message in chat_history:
+            role = "User" if message.get('sender') == 'user' else "Willow"
+            formatted_history += f"{role}: {message.get('text')}\n"
+
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            
+            # --- New Prompt with Memory ---
+            prompt = f"""
+            You are Willow, a friendly and supportive wellness chatbot. Your goal is to be empathetic and provide helpful, initial support.
+
+            Rules:
+            1.  Analyze the conversation history provided.
+            2.  Based on the history, provide a NEW and DIFFERENT simple, actionable coping strategy. DO NOT REPEAT suggestions.
+            3.  After providing the new strategy, you can gently guide them towards other app features.
+            4.  Keep responses concise (2-4 sentences).
+            5.  Never give medical advice.
+            
+            Here is the conversation history:
+            ---
+            {formatted_history}
+            ---
+            
+            Your new, non-repetitive, empathetic, and supportive response is:
+            """
+            
+            response = model.generate_content(prompt)
+            response_text = response.text
+        
+        except Exception as e:
+            print(f"Error calling Gemini API: {e}")
+            response_text = "I'm here to listen. Could you tell me a little more about what's on your mind?"
+
         return Response({'reply': response_text})

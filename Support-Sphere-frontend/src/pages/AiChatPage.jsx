@@ -38,11 +38,13 @@ function AiChatPage() {
       sender: 'user', 
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     };
-    setMessages(prev => [...prev, userMessage]);
+
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
     setIsTyping(true);
 
-    axios.post('http://127.0.0.1:8000/api/chat/', { message: userMessage.text })
+    axios.post('http://127.0.0.1:8000/api/chat/', { history: newMessages })
       .then(response => {
         const aiResponse = { 
           id: Date.now() + 1, 
@@ -50,7 +52,7 @@ function AiChatPage() {
           sender: 'ai',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages(prev => [...prev, aiResponse]);
+        setMessages(prevMessages => [...prevMessages, aiResponse]);
       })
       .catch(error => {
         console.error("Error fetching chatbot response:", error);
@@ -60,7 +62,7 @@ function AiChatPage() {
             sender: 'ai',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages(prev => [...prev, errorResponse]);
+        setMessages(prevMessages => [...prevMessages, errorResponse]);
       })
       .finally(() => {
         setIsTyping(false);
@@ -116,7 +118,7 @@ function AiChatPage() {
             placeholder="Type your message..."
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
           />
-          <button onClick={handleSend} className="bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300" disabled={!input.trim()}>
+          <button onClick={handleSend} className="bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300" disabled={!input.trim() || isTyping}>
             <PaperAirplaneIcon className="h-6 w-6" />
           </button>
         </div>

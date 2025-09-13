@@ -58,6 +58,9 @@ function Header({ onMenuClick }) {
                 <Link to="/settings" onClick={() => setIsDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Settings
                 </Link>
+                <Link to="/report-concern" onClick={() => setIsDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Report a Concern
+                </Link>
                 <Link to="/student/login" onClick={() => setIsDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Logout
                 </Link>
