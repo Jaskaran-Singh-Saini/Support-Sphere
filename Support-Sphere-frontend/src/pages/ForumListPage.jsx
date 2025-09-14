@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import SkeletonPostCard from '../components/SkeletonPostCard';
-
-const mockPosts = [
-  { id: 1, title: 'Feeling overwhelmed with exam pressure', author: 'User 123', replies: 5 },
-  { id: 2, title: 'How do you deal with homesickness?', author: 'User 456', replies: 12 },
-  { id: 3, title: 'Just wanted to share a small win today!', author: 'User 789', replies: 8 },
-];
 
 function ForumListPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching data from a backend
-    setTimeout(() => {
-      setPosts(mockPosts);
-      setLoading(false);
-    }, 2000); // Simulate a 2-second delay
+    // Fetch posts from our live Django API
+    axios.get('http://127.0.0.1:8000/api/posts/')
+      .then(response => {
+        setPosts(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching forum posts:", error);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -49,13 +49,16 @@ function ForumListPage() {
               <Link to={`/forum/${post.id}`} key={post.id} className="block bg-white p-4 rounded-lg shadow-sm border hover:shadow-md">
                 <h2 className="text-lg font-bold text-gray-800">{post.title}</h2>
                 <div className="flex items-center space-x-4 text-sm text-gray-500 mt-2">
-                  <span>Posted by {post.author}</span>
-                  <span>{post.replies} replies</span>
+                  <span>Posted by {post.author_username}</span>
+                  <span>{post.comments.length} replies</span>
                 </div>
               </Link>
             ))
           ) : (
-            <p>No posts yet. Be the first to share!</p>
+            <div className="text-center p-8 bg-white rounded-lg border">
+                <p className="font-semibold text-gray-700">No posts yet.</p>
+                <p className="text-gray-500">Be the first to share your thoughts!</p>
+            </div>
           )}
         </div>
       </div>

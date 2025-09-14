@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from .models import Reflection
-from .serializers import ReflectionSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from .models import Reflection, Post, Comment
+from .serializers import ReflectionSerializer, PostSerializer, CommentSerializer
 
 load_dotenv()
 
@@ -76,3 +76,22 @@ class ReflectionViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        
+        post_id = self.request.data.get('post')
+        post = Post.objects.get(id=post_id)
+        serializer.save(author=self.request.user, post=post)

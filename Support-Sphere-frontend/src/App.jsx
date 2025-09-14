@@ -24,6 +24,7 @@ import CurrentVolunteersPage from './pages/CurrentVolunteersPage';
 import CallPage from './pages/CallPage';
 import CounselorListPageAdmin from './pages/AdminCounselorListPage';
 import ReportConcernPage from './pages/ReportConcernPage';
+import CreatePostPage from './pages/CreatePostPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
       <Route path="/admin/current-volunteers" element={<CurrentVolunteersPage />} />
       <Route path="/call/:counselorId" element={<CallPage />} />
       <Route path="/report-concern" element={<ReportConcernPage />} />
+      <Route path="/forum/new" element={<CreatePostPage />} />
       
 
       {/* Pages with the main header layout */}

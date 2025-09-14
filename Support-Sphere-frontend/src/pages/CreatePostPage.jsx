@@ -1,6 +1,31 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { useState } from 'react';
 
 function CreatePostPage() {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!title.trim() || !content.trim()) {
+      toast.error('Please fill out both the title and content.');
+      return;
+    }
+
+    axios.post('http://127.0.0.1:8000/api/posts/', { title, content })
+      .then(response => {
+        toast.success('Post submitted successfully!');
+        navigate('/forum'); // Redirect to the forum list
+      })
+      .catch(error => {
+        console.error("Error creating post:", error);
+        toast.error('Could not submit post. Please try again.');
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto">
@@ -9,7 +34,7 @@ function CreatePostPage() {
             Create a New Post
           </h1>
           
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                 Title
@@ -17,6 +42,8 @@ function CreatePostPage() {
               <input
                 type="text"
                 id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter a descriptive title..."
               />
@@ -29,6 +56,8 @@ function CreatePostPage() {
               <textarea
                 id="content"
                 rows="8"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Share your thoughts anonymously..."
               ></textarea>
