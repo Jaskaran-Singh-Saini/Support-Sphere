@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import { ChatBubbleLeftEllipsisIcon, CalendarDaysIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { useMood } from '../context/MoodContext';
+import { useAuth } from '../context/AuthContext'; // Import the useAuth hook
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -43,7 +46,8 @@ function BreathingExercise() {
 }
 
 function Dashboard() {
-  const userName = "Karan";
+  const { user } = useAuth(); // Get user from auth context
+  const userName = user?.email.split('@')[0] || "User"; // Get username from email
   const { moodEntries, addMoodEntry } = useMood();
   
   const [selectedMood, setSelectedMood] = useState('Good');
@@ -58,10 +62,32 @@ function Dashboard() {
     addMoodEntry(moodName);
   };
 
+  // --- THIS IS THE UPDATED FUNCTION ---
   const handleSaveReflection = () => {
-    setShowConfirmation(true);
-    setReflectionText('');
-    setTimeout(() => setShowConfirmation(false), 2000);
+    if (!reflectionText.trim()) {
+        toast.error("Reflection cannot be empty.");
+        return;
+    }
+
+    axios.post('http://127.0.0.1:8000/api/reflections/', {
+        mood: selectedMood,
+        prompt1_text: reflectionText,
+        prompt2_text: '' // This can be used for a second prompt later
+    })
+    .then(response => {
+        toast.success("Reflection saved successfully!");
+        setReflectionText('');
+        setShowConfirmation(true);
+        setTimeout(() => setShowConfirmation(false), 2000);
+    })
+    .catch(error => {
+        console.error("Error saving reflection:", error);
+        if (error.response && error.response.status === 401) {
+            toast.error("You must be logged in to save a reflection.");
+        } else {
+            toast.error("Could not save reflection. Please try again.");
+        }
+    });
   };
   
   const openSosModal = () => {
@@ -145,7 +171,7 @@ function Dashboard() {
               <p className="mt-8 text-lg text-gray-600">Write a reflection</p>
               <textarea value={reflectionText} onChange={(e) => setReflectionText(e.target.value)} className="mt-4 w-full p-3 border border-gray-200 rounded-lg flex-grow" placeholder="Your thoughts are safe here..."></textarea>
               <div className="mt-4 text-right h-10">
-                {showConfirmation && <p className="text-green-600 font-semibold">Reflection Saved!</p>}
+                {showConfirmation && <p className="text-green-600 font-semibold animate-pulse">Reflection Saved!</p>}
                 {reflectionText && !showConfirmation && (
                   <button onClick={handleSaveReflection} className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700">Save</button>
                 )}
@@ -184,25 +210,25 @@ function Dashboard() {
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full text-center">
             {showBreathing ? (
                 <>
-                    <h2 className="text-2xl font-bold mb-4">Follow the Guide</h2>
-                    <BreathingExercise />
-                    <button onClick={() => setShowBreathing(false)} className="mt-6 bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Back</button>
+                  <h2 className="text-2xl font-bold mb-4">Follow the Guide</h2>
+                  <BreathingExercise />
+                  <button onClick={() => setShowBreathing(false)} className="mt-6 bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Back</button>
                 </>
             ) : (
                 <>
-                    <h2 className="text-2xl font-bold text-red-600 mb-2">Are you in immediate distress?</h2>
-                    <p className="text-gray-600 mb-6">If this is an emergency, please call a helpline. Your safety is the priority.</p>
-                    <div className="flex flex-col space-y-3">
-                        <a href="tel:112" className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 text-lg">
-                            Call National Emergency Helpline (112)
-                        </a>
-                        <button onClick={() => setShowBreathing(true)} className="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">
-                            Do a 1-Minute Grounding Exercise
-                        </button>
-                        <button onClick={closeSosModal} className="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
-                            Cancel
-                        </button>
-                    </div>
+                  <h2 className="text-2xl font-bold text-red-600 mb-2">Are you in immediate distress?</h2>
+                  <p className="text-gray-600 mb-6">If this is an emergency, please call a helpline. Your safety is the priority.</p>
+                  <div className="flex flex-col space-y-3">
+                      <a href="tel:112" className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 text-lg">
+                          Call National Emergency Helpline (112)
+                      </a>
+                      <button onClick={() => setShowBreathing(true)} className="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">
+                          Do a 1-Minute Grounding Exercise
+                      </button>
+                      <button onClick={closeSosModal} className="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                          Cancel
+                      </button>
+                  </div>
                 </>
             )}
           </div>

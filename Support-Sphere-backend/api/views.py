@@ -3,6 +3,10 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .models import Reflection
+from .serializers import ReflectionSerializer
 
 load_dotenv()
 
@@ -42,7 +46,7 @@ class ChatbotView(APIView):
             Rules:
             1.  Analyze the conversation history provided.
             2.  Based on the history, provide a NEW and DIFFERENT simple, actionable coping strategy. DO NOT REPEAT suggestions.
-            3.  After providing the new strategy, you can gently guide them towards other app features.
+            3.  After providing the new strategy, you can gently guide them towards other app features.            
             4.  Keep responses concise (2-4 sentences).
             5.  Never give medical advice.
             
@@ -62,3 +66,13 @@ class ChatbotView(APIView):
             response_text = "I'm here to listen. Could you tell me a little more about what's on your mind?"
 
         return Response({'reply': response_text})
+    
+class ReflectionViewSet(viewsets.ModelViewSet):
+    serializer_class = ReflectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Reflection.objects.filter(user = self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
