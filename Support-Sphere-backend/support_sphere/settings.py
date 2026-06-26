@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'api',
     'corsheaders',
     'channels',
-    'allauth.socialaccount',
 ]
 
 # Daphne must be first in INSTALLED_APPS when running under ASGI (Docker/prod).
@@ -63,7 +62,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'support_sphere.urls'
@@ -192,3 +190,15 @@ MOOD_SCORES = {
     'low': 2,
     'bad': 1,
 }
+
+# ── Email (crisis alerts) ──────────────────────────────────────────────────
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@supportsphere.app')
+CRISIS_ALERT_RECIPIENTS = [
+    e.strip() for e in os.getenv('CRISIS_ALERT_RECIPIENTS', '').split(',') if e.strip()
+]

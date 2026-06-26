@@ -6,17 +6,21 @@ from django.contrib.auth.models import AnonymousUser
 
 from .moderation import contains_crisis_language
 from .models import CrisisAlert
+from .notifications import send_crisis_email
 from .views import CRISIS_RESPONSE, generate_willow_reply
 
 
 @database_sync_to_async
 def log_crisis_alert(user, snippet):
-    if user.is_authenticated:
-        CrisisAlert.objects.create(
-            user=user,
-            message_snippet=snippet,
-            source='chat',
-        )
+    real_user = user if (user and not isinstance(user, AnonymousUser) and user.is_authenticated) else None
+    alert = CrisisAlert.objects.create(
+        user=real_user,
+        message_snippet=snippet,
+        source='chat',
+    )
+    # Email runs in the same sync thread (already off the event loop via database_sync_to_async)
+    send_crisis_email(real_user, snippet, 'chat')
+    return alert
 
 
 class ChatConsumer(AsyncWebsocketConsumer):

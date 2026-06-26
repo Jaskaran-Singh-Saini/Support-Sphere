@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 
 import google.generativeai as genai
 from django.conf import settings
@@ -25,6 +26,7 @@ from .models import (
     Reflection,
     Resource,
 )
+from .notifications import send_crisis_email
 from .permissions import IsAdminUser, IsAuthenticatedOrReadOnlyPublicForum
 from .serializers import (
     AppointmentSerializer,
@@ -90,11 +92,18 @@ class ChatbotView(APIView):
         user_message = chat_history[-1].get('text', '')
 
         if contains_crisis_language(user_message):
-            CrisisAlert.objects.create(
+            alert = CrisisAlert.objects.create(
                 user=request.user if request.user.is_authenticated else None,
                 message_snippet=user_message[:500],
                 source='chat',
             )
+            # Send email in background thread so it doesn't block the response
+            threading.Thread(
+                target=send_crisis_email,
+                args=(request.user if request.user.is_authenticated else None,
+                      user_message[:500], 'chat'),
+                daemon=True,
+            ).start()
             return Response({'reply': CRISIS_RESPONSE, 'crisis_detected': True})
 
         try:
@@ -133,6 +142,11 @@ class PostViewSet(viewsets.ModelViewSet):
                 message_snippet=combined[:500],
                 source='forum',
             )
+            threading.Thread(
+                target=send_crisis_email,
+                args=(self.request.user, combined[:500], 'forum'),
+                daemon=True,
+            ).start()
         serializer.save(author=self.request.user, moderation_status=status_value)
 
 
