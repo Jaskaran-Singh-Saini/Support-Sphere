@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
-import axios from 'axios';
+import { apiUrl, wsUrl } from '../config/api';
 
 function TypingIndicator() {
   return (
@@ -15,11 +15,18 @@ function TypingIndicator() {
 
 function AiChatPage() {
   const [messages, setMessages] = useState([
-    { id: 1, text: 'Hello! I am Willow, your personal Wellness Assistant. How can I help you today?', sender: 'ai', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    {
+      id: 1,
+      text: 'Hello! I am Willow, your personal Wellness Assistant. How can I help you today?',
+      sender: 'ai',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const chatEndRef = useRef(null);
+  const wsRef = useRef(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,14 +36,62 @@ function AiChatPage() {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  useEffect(() => {
+    const socket = new WebSocket(wsUrl('/chat/'));
+    wsRef.current = socket;
+
+    socket.onopen = () => setWsConnected(true);
+    socket.onerror = () => setWsConnected(false);
+    socket.onclose = () => setWsConnected(false);
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: data.reply,
+        sender: 'ai',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+      setIsTyping(false);
+    };
+
+    return () => socket.close();
+  }, []);
+
+  const sendViaHttp = (history) => {
+    fetch(apiUrl('/chat/'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          text: data.reply,
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+      })
+      .catch(() => {
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          text: 'I seem to be having trouble connecting. Please try again later.',
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+      })
+      .finally(() => setIsTyping(false));
+  };
+
   const handleSend = () => {
     if (input.trim() === '') return;
 
-    const userMessage = { 
-      id: Date.now(), 
-      text: input, 
-      sender: 'user', 
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+    const userMessage = {
+      id: Date.now(),
+      text: input,
+      sender: 'user',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     const newMessages = [...messages, userMessage];
@@ -44,29 +99,11 @@ function AiChatPage() {
     setInput('');
     setIsTyping(true);
 
-    axios.post('http://127.0.0.1:8000/api/chat/', { history: newMessages })
-      .then(response => {
-        const aiResponse = { 
-          id: Date.now() + 1, 
-          text: response.data.reply, 
-          sender: 'ai',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prevMessages => [...prevMessages, aiResponse]);
-      })
-      .catch(error => {
-        console.error("Error fetching chatbot response:", error);
-        const errorResponse = {
-            id: Date.now() + 1, 
-            text: 'I seem to be having trouble connecting. Please try again later.', 
-            sender: 'ai',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prevMessages => [...prevMessages, errorResponse]);
-      })
-      .finally(() => {
-        setIsTyping(false);
-      });
+    if (wsConnected && wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ history: newMessages }));
+    } else {
+      sendViaHttp(newMessages);
+    }
   };
 
   return (
@@ -78,11 +115,14 @@ function AiChatPage() {
           </Link>
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
             <h1 className="text-xl font-bold text-gray-800">Willow</h1>
+            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${wsConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+              {wsConnected ? 'Live' : 'HTTP'}
+            </span>
           </div>
           <div className="w-32"></div>
         </div>
       </header>
-      
+
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.map(message => (

@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { apiUrl } from '../config/api';
 import { ChatBubbleLeftEllipsisIcon, CalendarDaysIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { useMood } from '../context/MoodContext';
-import { useAuth } from '../context/AuthContext'; // Import the useAuth hook
+import { useAuth } from '../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -46,8 +47,8 @@ function BreathingExercise() {
 }
 
 function Dashboard() {
-  const { user } = useAuth(); // Get user from auth context
-  const userName = user?.email.split('@')[0] || "User"; // Get username from email
+  const { user } = useAuth();
+  const userName = user?.username || "User";
   const { moodEntries, addMoodEntry } = useMood();
   
   const [selectedMood, setSelectedMood] = useState('Good');
@@ -62,17 +63,16 @@ function Dashboard() {
     addMoodEntry(moodName);
   };
 
-  // --- THIS IS THE UPDATED FUNCTION ---
   const handleSaveReflection = () => {
     if (!reflectionText.trim()) {
         toast.error("Reflection cannot be empty.");
         return;
     }
 
-    axios.post('http://127.0.0.1:8000/api/reflections/', {
+    axios.post(apiUrl('/reflections/'), {
         mood: selectedMood,
         prompt1_text: reflectionText,
-        prompt2_text: '' // This can be used for a second prompt later
+        prompt2_text: ''
     })
     .then(response => {
         toast.success("Reflection saved successfully!");
@@ -82,7 +82,7 @@ function Dashboard() {
     })
     .catch(error => {
         console.error("Error saving reflection:", error);
-        if (error.response && error.response.status === 401) {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
             toast.error("You must be logged in to save a reflection.");
         } else {
             toast.error("Could not save reflection. Please try again.");
@@ -120,6 +120,7 @@ function Dashboard() {
     <div className="min-h-screen bg-slate-50 p-4">
       <div className="max-w-screen-xl mx-auto grid grid-cols-12 gap-8">
         
+        {/* --- Left Sidebar --- */}
         <div className="col-span-3">
           <aside className="bg-slate-800 text-white rounded-2xl p-6 flex flex-col h-full">
             <div className="flex items-center space-x-2 mb-10">
@@ -144,6 +145,7 @@ function Dashboard() {
           </aside>
         </div>
         
+        {/* --- Main Content --- */}
         <div className="col-span-5">
           <div className="bg-white p-8 rounded-2xl shadow-sm h-full flex flex-col">
             <h2 className="text-3xl font-bold text-gray-800">Today's Focus</h2>
@@ -180,6 +182,7 @@ function Dashboard() {
           </div>
         </div>
         
+        {/* --- Right Sidebar --- */}
         <div className="col-span-4">
           <div className="space-y-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm">
@@ -205,36 +208,38 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* --- Emergency SOS Modal --- */}
       {isSosModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full text-center">
             {showBreathing ? (
                 <>
-                  <h2 className="text-2xl font-bold mb-4">Follow the Guide</h2>
-                  <BreathingExercise />
-                  <button onClick={() => setShowBreathing(false)} className="mt-6 bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Back</button>
+                    <h2 className="text-2xl font-bold mb-4">Follow the Guide</h2>
+                    <BreathingExercise />
+                    <button onClick={() => setShowBreathing(false)} className="mt-6 bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300">Back</button>
                 </>
             ) : (
                 <>
-                  <h2 className="text-2xl font-bold text-red-600 mb-2">Are you in immediate distress?</h2>
-                  <p className="text-gray-600 mb-6">If this is an emergency, please call a helpline. Your safety is the priority.</p>
-                  <div className="flex flex-col space-y-3">
-                      <a href="tel:112" className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 text-lg">
-                          Call National Emergency Helpline (112)
-                      </a>
-                      <button onClick={() => setShowBreathing(true)} className="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">
-                          Do a 1-Minute Grounding Exercise
-                      </button>
-                      <button onClick={closeSosModal} className="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
-                          Cancel
-                      </button>
-                  </div>
+                    <h2 className="text-2xl font-bold text-red-600 mb-2">Are you in immediate distress?</h2>
+                    <p className="text-gray-600 mb-6">If this is an emergency, please call a helpline. Your safety is the priority.</p>
+                    <div className="flex flex-col space-y-3">
+                        <a href="tel:112" className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 text-lg">
+                            Call National Emergency Helpline (112)
+                        </a>
+                        <button onClick={() => setShowBreathing(true)} className="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">
+                            Do a 1-Minute Grounding Exercise
+                        </button>
+                        <button onClick={closeSosModal} className="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                            Cancel
+                        </button>
+                    </div>
                 </>
             )}
           </div>
         </div>
       )}
 
+      {/* --- Resource Modal --- */}
       {resourceModalContent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full relative">

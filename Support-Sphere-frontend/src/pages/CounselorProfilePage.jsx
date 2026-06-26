@@ -1,65 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { apiUrl } from '../config/api';
+import toast from 'react-hot-toast';
 
-const counselors = [
-  { 
-    id: 1, 
-    name: 'Dr. Anjali Sharma', 
-    specialty: 'Academic Stress & Anxiety', 
-    bio: 'With over 10 years of experience, Dr. Sharma specializes in helping students manage academic pressure and anxiety through cognitive-behavioral techniques.',
-    availableDates: ['2025-09-04', '2025-09-05', '2025-09-08', '2025-09-09', '2025-09-11', '2025-09-12', '2025-09-15']
-  },
-  { 
-    id: 2, 
-    name: 'Mr. Rohan Gupta', 
-    specialty: 'Career & Relationship Counseling', 
-    bio: 'Mr. Gupta focuses on guiding students through career decisions and navigating the complexities of personal relationships during college life.',
-    availableDates: ['2025-09-03', '2025-09-04', '2025-09-10', '2025-09-11', '2025-09-17', '2025-09-18']
-  },
-  { 
-    id: 3, 
-    name: 'Ms. Priya Singh', 
-    specialty: 'Depression & Burnout', 
-    bio: 'Ms. Singh provides a supportive space for students dealing with feelings of depression, burnout, and emotional exhaustion.',
-    availableDates: ['2025-09-08', '2025-09-10', '2025-09-12', '2025-09-16', '2025-09-18', '2025-09-22']
-  },
-];
-
-const availableTimes = ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'];
+const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00'];
 
 function CounselorProfilePage() {
   const { counselorId } = useParams();
+  const [counselor, setCounselor] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 8, 1)); 
-  const [selectedDate, setSelectedDate] = useState(null);
-  
-  const counselor = counselors.find(c => c.id === parseInt(counselorId));
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
-  if (!counselor) return <div>Counselor not found.</div>;
+  useEffect(() => {
+    axios.get(apiUrl(`/counselors/${counselorId}/`))
+      .then(response => setCounselor(response.data))
+      .catch(() => toast.error('Counselor not found.'));
+  }, [counselorId]);
 
-  const monthName = currentDate.toLocaleString('default', { month: 'long' });
-  const year = currentDate.getFullYear();
-  const daysInMonth = new Date(year, currentDate.getMonth() + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, currentDate.getMonth(), 1).getDay();
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const emptyDays = Array.from({ length: firstDayOfMonth });
+  if (!counselor) {
+    return <div className="p-8 text-center text-gray-600">Loading counselor profile...</div>;
+  }
 
-  const handleDateClick = (day) => {
-    const fullDate = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    if (counselor.availableDates.includes(fullDate)) {
-      setSelectedDate(fullDate);
-    }
-  };
-
-  const changeMonth = (offset) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
-    setSelectedDate(null);
-  };
-  
   const handleConfirmBooking = () => {
-    setIsModalOpen(false);
-    toast.success(`Session with ${counselor.name} confirmed!`);
+    if (!selectedDate || !selectedTime) return;
+
+    const scheduledAt = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+
+    axios.post(apiUrl('/appointments/'), {
+      counselor: counselor.id,
+      scheduled_at: scheduledAt,
+    })
+      .then(() => {
+        toast.success(`Session with ${counselor.name} booked successfully!`);
+        setIsModalOpen(false);
+      })
+      .catch(() => toast.error('Booking failed. Please log in and try again.'));
   };
 
   return (
@@ -87,54 +65,35 @@ function CounselorProfilePage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-6 sm:p-8 rounded-lg shadow-xl max-w-lg w-full">
             <h2 className="text-2xl font-bold mb-4">Book with {counselor.name}</h2>
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-100">&larr;</button>
-                <h3 className="font-semibold text-lg">{monthName} {year}</h3>
-                <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-100">&rarr;</button>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2"
+                />
               </div>
-              <div className="grid grid-cols-7 gap-2 text-center text-sm">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => <div key={day} className="font-medium text-gray-500">{day}</div>)}
-                {emptyDays.map((_, i) => <div key={`empty-${i}`}></div>)}
-                {calendarDays.map(day => {
-                  const fullDate = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                  const isAvailable = counselor.availableDates.includes(fullDate);
-                  const isSelected = selectedDate === fullDate;
-                  
-                  return (
-                    <button 
-                      key={day} 
-                      onClick={() => handleDateClick(day)}
-                      disabled={!isAvailable}
-                      className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
-                        isSelected ? 'bg-blue-600 text-white' :
-                        isAvailable ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                        'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      }`}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {availableTimes.map(time => (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => setSelectedTime(time)}
+                      className={`p-2 border rounded-lg transition-colors ${selectedTime === time ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-blue-50'}`}
                     >
-                      {day}
+                      {time}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             </div>
-
-            {selectedDate && (
-                <div className="mt-6">
-                    <h3 className="font-semibold text-lg mb-2">Select an Available Time for {new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {availableTimes.map(time => (
-                            <button key={time} className="p-2 border border-gray-300 rounded-lg hover:bg-blue-500 hover:text-white transition-colors focus:bg-blue-500 focus:text-white">
-                                {time}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <div className="mt-8 flex justify-end space-x-3">
               <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
-              <button onClick={handleConfirmBooking} disabled={!selectedDate} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Confirm Booking</button>
+              <button onClick={handleConfirmBooking} disabled={!selectedDate || !selectedTime} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Confirm Booking</button>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 import SkeletonPostCard from '../components/SkeletonPostCard';
 
 function ForumListPage() {
@@ -9,7 +10,7 @@ function ForumListPage() {
 
   useEffect(() => {
     // Fetch posts from our live Django API
-    axios.get('http://127.0.0.1:8000/api/posts/')
+    axios.get(apiUrl('/posts/'))
       .then(response => {
         setPosts(response.data);
         setLoading(false);

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 import { useState } from 'react';
 
 function CreatePostPage() {
@@ -15,7 +16,7 @@ function CreatePostPage() {
       return;
     }
 
-    axios.post('http://127.0.0.1:8000/api/posts/', { title, content })
+    axios.post(apiUrl('/posts/'), { title, content })
       .then(response => {
         toast.success('Post submitted successfully!');
         navigate('/forum'); // Redirect to the forum list

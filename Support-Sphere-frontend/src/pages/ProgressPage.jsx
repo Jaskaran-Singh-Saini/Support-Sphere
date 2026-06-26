@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { useMood } from '../context/MoodContext';
@@ -35,23 +36,37 @@ function Achievement({ icon: Icon, title, achieved = false }) {
     );
 }
 
+function calcStreak(reflections) {
+  if (!reflections.length) return 0;
+  const days = [...new Set(reflections.map(r => r.created_at?.slice(0, 10)))].sort().reverse();
+  let streak = 0;
+  let cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  for (const day of days) {
+    const d = new Date(day);
+    const diff = Math.round((cursor - d) / 86400000);
+    if (diff <= 1) { streak++; cursor = d; }
+    else break;
+  }
+  return streak;
+}
+
 function ProgressPage() {
-  const { moodEntries } = useMood();
+  const { moodEntries, refreshMoods } = useMood();
   const [reflections, setReflections] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
-    console.log("Attempting to fetch reflections..."); // Debugging line
-    axios.get('http://127.0.0.1:8000/api/reflections/')
+    axios.get(apiUrl('/reflections/'))
       .then(response => {
-        console.log("Reflections fetched successfully:", response.data); // Debugging line
         setReflections(response.data);
         setLoading(false);
       })
       .catch(error => {
-        console.error("Error fetching reflections:", error);
+        console.error('Error fetching reflections:', error);
         setLoading(false);
       });
+    refreshMoods?.();
   }, []);
 
   const chartData = {
@@ -80,9 +95,9 @@ function ProgressPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard icon={FireIcon} title="Current Streak" value="7 Days" color="orange" />
+            <StatCard icon={FireIcon} title="Current Streak" value={`${calcStreak(reflections)} Days`} color="orange" />
             <StatCard icon={PencilSquareIcon} title="Reflections Written" value={reflections.length} color="blue" />
-            <StatCard icon={SparklesIcon} title="Self-Care Tasks" value="32" color="purple" />
+            <StatCard icon={SparklesIcon} title="Mood Check-ins" value={moodEntries.length} color="purple" />
         </div>
         
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -109,10 +124,10 @@ function ProgressPage() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Achievements</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Achievement icon={TrophyIcon} title="First Step" achieved={true} />
-                <Achievement icon={PencilSquareIcon} title="Journalist" achieved={reflections.length > 0} />
-                <Achievement icon={FireIcon} title="7-Day Streak" achieved={true} />
-                <Achievement icon={SparklesIcon} title="Self-Care Pro" achieved={false} />
+                <Achievement icon={TrophyIcon} title="First Step" achieved={reflections.length > 0} />
+                <Achievement icon={PencilSquareIcon} title="Journalist" achieved={reflections.length >= 5} />
+                <Achievement icon={FireIcon} title="7-Day Streak" achieved={calcStreak(reflections) >= 7} />
+                <Achievement icon={SparklesIcon} title="10 Reflections" achieved={reflections.length >= 10} />
             </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { apiUrl } from '../config/api';
 
 function ForumPostPage() {
   const { postId } = useParams();
@@ -10,7 +11,7 @@ function ForumPostPage() {
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
-    axios.get(`http://127.0.0.1:8000/api/posts/${postId}/`)
+    axios.get(apiUrl(`/posts/${postId}/`))
       .then(response => {
         setPost(response.data);
         setLoading(false);
@@ -25,7 +26,7 @@ function ForumPostPage() {
     event.preventDefault();
     if (!newComment.trim()) return;
 
-    axios.post('http://127.0.0.1:8000/api/comments/', {
+    axios.post(apiUrl('/comments/'), {
       post: postId,
       content: newComment,
     })

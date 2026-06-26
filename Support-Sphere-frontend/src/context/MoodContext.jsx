@@ -1,33 +1,50 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const MoodContext = createContext();
 
 export const useMood = () => useContext(MoodContext);
 
-export const MoodProvider = ({ children }) => {
-  const [moodEntries, setMoodEntries] = useState([
-    { date: 'Mon', score: 3 },
-    { date: 'Tue', score: 4 },
-    { date: 'Wed', score: 2 },
-  ]);
+const SCORE_MAP = { awful: 1, bad: 2, okay: 3, good: 4, great: 5 };
+const fmt = (date) => date.toLocaleDateString('en-us', { weekday: 'short' });
 
+export const MoodProvider = ({ children }) => {
+  const [moodEntries, setMoodEntries] = useState([]);
+
+  const loadFromBackend = useCallback(async () => {
+    try {
+      const res = await axios.get(apiUrl('/reflections/'));
+      const entries = res.data.map((r) => ({
+        date: new Date(r.created_at).toLocaleDateString('en-us', { weekday: 'short', month: 'short', day: 'numeric' }),
+        score: SCORE_MAP[r.mood?.toLowerCase()] ?? 3,
+        mood: r.mood,
+      }));
+      if (entries.length > 0) setMoodEntries(entries);
+    } catch {
+      // Not logged in or network error — silently skip
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFromBackend();
+  }, [loadFromBackend]);
+
+  // Called immediately after a successful POST to /reflections/
+  // so the chart updates without needing a refetch
   const addMoodEntry = (moodName) => {
-    const scoreMap = { Awful: 1, Bad: 2, Okay: 3, Good: 4, Great: 5 };
-    const score = scoreMap[moodName] || 3;
-    const date = new Date().toLocaleDateString('en-us', { weekday: 'short' });
-    
-    const newEntry = { date, score };
-    
-    setMoodEntries(prevEntries => {
-        const otherEntries = prevEntries.filter(entry => entry.date !== date);
-        return [...otherEntries, newEntry];
+    const score = SCORE_MAP[moodName.toLowerCase()] ?? 3;
+    const date = new Date().toLocaleDateString('en-us', { weekday: 'short', month: 'short', day: 'numeric' });
+    setMoodEntries((prev) => {
+      const others = prev.filter((e) => e.date !== date);
+      return [...others, { date, score, mood: moodName }];
     });
   };
 
-  const value = { moodEntries, addMoodEntry };
+  const refreshMoods = loadFromBackend;
 
   return (
-    <MoodContext.Provider value={value}>
+    <MoodContext.Provider value={{ moodEntries, addMoodEntry, refreshMoods }}>
       {children}
     </MoodContext.Provider>
   );

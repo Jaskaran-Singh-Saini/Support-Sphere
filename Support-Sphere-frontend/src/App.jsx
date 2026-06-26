@@ -26,11 +26,14 @@ import CounselorListPageAdmin from './pages/AdminCounselorListPage';
 import ReportConcernPage from './pages/ReportConcernPage';
 import CreatePostPage from './pages/CreatePostPage';
 
+import RegisterPage from './pages/RegisterPage';
+
 function App() {
   return (
     <Routes>
       {/* Standalone pages (no main header) */}
       <Route path="/student/login" element={<LoginPage />} />
+      <Route path="/student/register" element={<RegisterPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/counselor/dashboard" element={<CounselorDashboard />} />
       <Route path="/counselor/student/:studentId" element={<StudentCaseFilePage />} />
