@@ -25,6 +25,7 @@ from .models import (
     Post,
     Reflection,
     Resource,
+    UserProfile,
 )
 from .notifications import send_crisis_email
 from .permissions import IsAdminUser, IsAuthenticatedOrReadOnlyPublicForum
@@ -55,29 +56,39 @@ CRISIS_RESPONSE = (
 
 
 def generate_willow_reply(chat_history):
-    formatted_history = ''
-    for message in chat_history:
-        role = 'User' if message.get('sender') == 'user' else 'Willow'
-        formatted_history += f"{role}: {message.get('text')}\n"
+    recent = chat_history[-10:] if len(chat_history) > 10 else chat_history
+    formatted_history = ""
+    for message in recent:
+        role = "Student" if message.get("sender") == "user" else "Willow"
+        formatted_history += f"{role}: {message.get('text', '').strip()}\n"
 
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    prompt = f"""
-    You are Willow, a friendly and supportive wellness chatbot for students.
-    Rules:
-    1. Be empathetic and provide simple, actionable coping strategies.
-    2. Keep responses concise (2-4 sentences).
-    3. Never give medical advice or diagnose conditions.
-    4. Gently suggest counseling or peer forums when appropriate.
-
-    Conversation history:
-    ---
-    {formatted_history}
-    ---
-
-    Your supportive response:
-    """
+    model = genai.GenerativeModel("gemini-1.5-flash-latest")
+    prompt = (
+        "You are Willow, a compassionate wellness companion for university students in India.\n\n"
+        "YOUR PERSONA:\n"
+        "- Warm, calm, non-judgmental like a trusted older sibling who knows about mental health\n"
+        "- You remember everything said earlier in this conversation and refer back naturally\n"
+        "- Simple everyday language, no clinical jargon\n"
+        "- Culturally aware of Indian student pressures: exams, family expectations, career anxiety\n\n"
+        "STRICT RULES:\n"
+        "1. NEVER diagnose, prescribe, or give medical advice\n"
+        "2. NEVER make up facts, studies, or statistics\n"
+        "3. If student seems in crisis refer to: Tele-MANAS (14416) or iCall (+91-9152987821)\n"
+        "4. Keep responses to 3-5 sentences unless asked for more\n"
+        "5. Ask one gentle follow-up question at the end\n"
+        "6. Do not repeat the same suggestion twice in a conversation\n\n"
+        "RESPONSE STYLE:\n"
+        "- Briefly acknowledge what the student said\n"
+        "- Offer one concrete actionable coping suggestion\n"
+        "- End with a warm open-ended question\n\n"
+        "CONVERSATION SO FAR:\n"
+        "---\n"
+        f"{formatted_history}"
+        "---\n\n"
+        "Willow\'s response:"
+    )
     response = model.generate_content(prompt)
-    return response.text
+    return response.text.strip()
 
 
 class ChatbotView(APIView):
@@ -270,7 +281,17 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        profile = getattr(request.user, 'profile', None)
-        if not profile:
-            return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
         return Response(UserProfileSerializer(profile).data)
+
+    def patch(self, request):
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            allowed = {k: v for k, v in serializer.validated_data.items()
+                       if k in ('display_name', 'preferred_language')}
+            for attr, value in allowed.items():
+                setattr(profile, attr, value)
+            profile.save()
+            return Response(UserProfileSerializer(profile).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

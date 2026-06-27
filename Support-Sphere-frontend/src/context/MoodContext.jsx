@@ -13,6 +13,7 @@ export const MoodProvider = ({ children }) => {
   const [moodEntries, setMoodEntries] = useState([]);
 
   const loadFromBackend = useCallback(async () => {
+    if (!localStorage.getItem('authToken')) return;
     try {
       const res = await axios.get(apiUrl('/reflections/'));
       const entries = res.data.map((r) => ({
