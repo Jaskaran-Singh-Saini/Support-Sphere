@@ -295,3 +295,55 @@ class MeView(APIView):
             profile.save()
             return Response(UserProfileSerializer(profile).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CrisisAlertListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        alerts = CrisisAlert.objects.select_related('user').order_by('-created_at')[:50]
+        data = [
+            {
+                'id': a.id,
+                'username': a.user.username if a.user else 'Anonymous',
+                'email': a.user.email if a.user else '',
+                'snippet': a.message_snippet,
+                'source': a.source,
+                'resolved': a.resolved,
+                'created_at': a.created_at.strftime('%d %b %Y %H:%M'),
+            }
+            for a in alerts
+        ]
+        return Response(data)
+
+
+class CrisisAlertResolveView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            alert = CrisisAlert.objects.get(pk=pk)
+            alert.resolved = True
+            alert.save()
+            return Response({'status': 'resolved'})
+        except CrisisAlert.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.select_related('profile').order_by('-date_joined')
+        data = [
+            {
+                'id': u.id,
+                'username': u.username,
+                'email': u.email,
+                'role': getattr(u.profile, 'role', 'student') if hasattr(u, 'profile') else 'student',
+                'date_joined': u.date_joined.strftime('%d %b %Y'),
+                'is_active': u.is_active,
+            }
+            for u in users
+        ]
+        return Response(data)

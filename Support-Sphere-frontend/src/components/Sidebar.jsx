@@ -7,13 +7,18 @@ import {
   UserGroupIcon,
   HeartIcon,
   PhoneIcon,
+  CheckCircleIcon,
+  PencilSquareIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 
 const navItems = [
   { href: '/', icon: HomeIcon, label: 'Dashboard' },
   { href: '/chat', icon: ChatBubbleLeftEllipsisIcon, label: 'Willow' },
   { href: '/assessments', icon: BeakerIcon, label: 'Assessments' },
-  { href: '/self-help', icon: BookOpenIcon, label: 'Self Help' },
+  { href: '/tasks', icon: CheckCircleIcon, label: 'Self-Care' },
+  { href: '/reflection', icon: PencilSquareIcon, label: 'Reflection' },
+  { href: '/self-help', icon: SparklesIcon, label: 'Resources' },
   { href: '/forum', icon: UserGroupIcon, label: 'Forum' },
   { href: '/progress', icon: HeartIcon, label: 'My Progress' },
   { href: '/counseling', icon: PhoneIcon, label: 'Counseling' },

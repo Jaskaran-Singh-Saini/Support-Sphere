@@ -4,6 +4,9 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     AdminAnalyticsView,
+    AdminUserListView,
+    CrisisAlertListView,
+    CrisisAlertResolveView,
     AppointmentViewSet,
     AssessmentResultViewSet,
     ChatbotView,
@@ -29,5 +32,8 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', MeView.as_view(), name='me'),
     path('admin/analytics/', AdminAnalyticsView.as_view(), name='admin-analytics'),
+    path('admin/crisis-alerts/', CrisisAlertListView.as_view(), name='admin-crisis-alerts'),
+    path('admin/crisis-alerts/<int:pk>/resolve/', CrisisAlertResolveView.as_view(), name='admin-crisis-resolve'),
+    path('admin/users/', AdminUserListView.as_view(), name='admin-users'),
     path('', include(router.urls)),
 ]
