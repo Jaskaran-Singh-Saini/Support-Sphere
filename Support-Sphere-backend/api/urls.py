@@ -7,6 +7,7 @@ from .views import (
     AdminUserListView,
     CrisisAlertListView,
     CrisisAlertResolveView,
+    CounselorInvitationView,
     AppointmentViewSet,
     AssessmentResultViewSet,
     ChatbotView,
@@ -35,5 +36,6 @@ urlpatterns = [
     path('admin/crisis-alerts/', CrisisAlertListView.as_view(), name='admin-crisis-alerts'),
     path('admin/crisis-alerts/<int:pk>/resolve/', CrisisAlertResolveView.as_view(), name='admin-crisis-resolve'),
     path('admin/users/', AdminUserListView.as_view(), name='admin-users'),
+    path('admin/counselor-invitations/', CounselorInvitationView.as_view(), name='admin-counselor-invitations'),
     path('', include(router.urls)),
 ]

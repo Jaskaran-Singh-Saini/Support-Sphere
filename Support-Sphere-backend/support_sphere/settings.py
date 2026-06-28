@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'drf_spectacular',
     'api',
     'corsheaders',
     'channels',
@@ -163,6 +164,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -275,4 +277,50 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+
+# ── Swagger / OpenAPI Docs ─────────────────────────────────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Support Sphere API',
+    'DESCRIPTION': '''
+## Support Sphere — Mental Health Platform API
+
+A comprehensive REST API for the Support Sphere student mental health platform.
+
+### Features
+- 🔐 JWT-based authentication with role-based access control
+- 🤖 AI-powered chat with crisis detection
+- 📅 Counselor booking and appointment management
+- 📝 Encrypted reflection journaling
+- 📊 Mood tracking and progress analytics
+- 🏥 Crisis alert system with email notifications
+- 💬 Moderated peer support forum
+
+### Authentication
+All protected endpoints require a Bearer JWT token in the Authorization header:
+```
+Authorization: Bearer <access_token>
+```
+Obtain a token via `POST /api/auth/login/`
+
+### Roles
+- **student** — default role, access to personal data and public endpoints
+- **counselor** — access to appointment management and student cases
+- **admin** — full access including analytics, crisis alerts, and user management
+    ''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'auth', 'description': 'Registration, login, token refresh'},
+        {'name': 'users', 'description': 'User profile management'},
+        {'name': 'chat', 'description': 'AI chatbot (Willow) and crisis detection'},
+        {'name': 'reflections', 'description': 'Encrypted journal reflections'},
+        {'name': 'counselors', 'description': 'Counselor profiles and availability'},
+        {'name': 'appointments', 'description': 'Booking and appointment management'},
+        {'name': 'forum', 'description': 'Moderated peer support forum'},
+        {'name': 'resources', 'description': 'Self-help resources and wellness content'},
+        {'name': 'assessments', 'description': 'GAD-7, PHQ-9 and GHQ-12 assessments'},
+        {'name': 'admin', 'description': 'Admin-only analytics, crisis alerts, user management'},
+    ],
 }

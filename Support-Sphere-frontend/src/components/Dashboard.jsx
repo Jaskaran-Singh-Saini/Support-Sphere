@@ -118,10 +118,10 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4">
-      <div className="max-w-screen-xl mx-auto grid grid-cols-12 gap-8">
+      <div className="max-w-screen-xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
         
         {/* --- Left Sidebar --- */}
-        <div className="col-span-3">
+        <div className="col-span-1 lg:col-span-3">
           <aside className="bg-slate-800 text-white rounded-2xl p-6 flex flex-col h-full">
             <div className="flex items-center space-x-2 mb-10">
               <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center font-bold text-lg">SS</div>
@@ -138,6 +138,21 @@ function Dashboard() {
               <Link to="/counseling" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
                 <CalendarDaysIcon className="h-6 w-6" /><span className="font-semibold">Book a Session</span>
               </Link>
+              <Link to="/tasks" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                <span className="text-xl">✅</span><span className="font-semibold">Self-Care</span>
+              </Link>
+              <Link to="/reflection" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                <span className="text-xl">📝</span><span className="font-semibold">Reflection</span>
+              </Link>
+              <Link to="/progress" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                <span className="text-xl">📈</span><span className="font-semibold">Progress</span>
+              </Link>
+              <Link to="/self-help" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                <span className="text-xl">📚</span><span className="font-semibold">Resources</span>
+              </Link>
+              <Link to="/forum" className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
+                <span className="text-xl">💬</span><span className="font-semibold">Forum</span>
+              </Link>
             </nav>
             <button onClick={openSosModal} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 text-lg">
               Emergency SOS
@@ -146,7 +161,7 @@ function Dashboard() {
         </div>
         
         {/* --- Main Content --- */}
-        <div className="col-span-5">
+        <div className="col-span-1 lg:col-span-5">
           <div className="bg-white p-8 rounded-2xl shadow-sm h-full flex flex-col">
             <h2 className="text-3xl font-bold text-gray-800">Today's Focus</h2>
             <p className="mt-6 text-lg text-gray-600">How are you feeling?</p>
@@ -183,7 +198,7 @@ function Dashboard() {
         </div>
         
         {/* --- Right Sidebar --- */}
-        <div className="col-span-4">
+        <div className="col-span-1 lg:col-span-4">
           <div className="space-y-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm">
               <h3 className="text-xl font-bold text-gray-800">Your Week at a Glance</h3>

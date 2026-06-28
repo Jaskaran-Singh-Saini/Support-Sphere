@@ -347,3 +347,78 @@ class AdminUserListView(APIView):
             for u in users
         ]
         return Response(data)
+
+
+class CounselorInvitationView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from .models import CounselorInvitation
+        invitations = CounselorInvitation.objects.select_related('invited_by').order_by('-created_at')
+        data = [
+            {
+                'id': inv.id,
+                'name': inv.name,
+                'email': inv.email,
+                'specialty': inv.specialty,
+                'status': inv.status,
+                'invited_by': inv.invited_by.username if inv.invited_by else 'System',
+                'created_at': inv.created_at.strftime('%d %b %Y %H:%M'),
+            }
+            for inv in invitations
+        ]
+        return Response(data)
+
+    def post(self, request):
+        from .models import CounselorInvitation
+        email = request.data.get('email', '').strip().lower()
+        name = request.data.get('name', '').strip()
+        specialty = request.data.get('specialty', '').strip()
+
+        if not email or not name:
+            return Response({'detail': 'Name and email are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if CounselorInvitation.objects.filter(email=email).exists():
+            return Response({'detail': 'An invitation for this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        invitation = CounselorInvitation.objects.create(
+            email=email,
+            name=name,
+            specialty=specialty,
+            invited_by=request.user,
+            status='pending',
+        )
+
+        # Send invitation email
+        try:
+            from django.core.mail import send_mail
+            send_mail(
+                subject='You have been invited as a Counselor — Support Sphere',
+                message=f"""
+Dear {name},
+
+You have been invited to join Support Sphere as a Counselor.
+
+Please contact your administrator to complete your registration.
+
+Your registered email: {email}
+Specialty: {specialty or 'Not specified'}
+
+Welcome aboard,
+Support Sphere Team
+                """.strip(),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            logger.warning('Failed to send counselor invitation email: %s', e)
+
+        return Response({
+            'id': invitation.id,
+            'name': invitation.name,
+            'email': invitation.email,
+            'status': invitation.status,
+            'created_at': invitation.created_at.strftime('%d %b %Y %H:%M'),
+            'message': f'Invitation sent to {email}',
+        }, status=status.HTTP_201_CREATED)
