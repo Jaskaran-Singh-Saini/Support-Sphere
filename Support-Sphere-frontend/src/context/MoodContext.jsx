@@ -11,6 +11,7 @@ const fmt = (date) => date.toLocaleDateString('en-us', { weekday: 'short' });
 
 export const MoodProvider = ({ children }) => {
   const [moodEntries, setMoodEntries] = useState([]);
+  const [reflectionCount, setReflectionCount] = useState(0);
 
   const loadFromBackend = useCallback(async () => {
     if (!localStorage.getItem('authToken')) return;
@@ -21,6 +22,7 @@ export const MoodProvider = ({ children }) => {
         score: SCORE_MAP[r.mood?.toLowerCase()] ?? 3,
         mood: r.mood,
       }));
+      setReflectionCount(res.data.length);
       if (entries.length > 0) setMoodEntries(entries);
     } catch {
       // Not logged in or network error — silently skip
@@ -36,6 +38,7 @@ export const MoodProvider = ({ children }) => {
   const addMoodEntry = (moodName) => {
     const score = SCORE_MAP[moodName.toLowerCase()] ?? 3;
     const date = new Date().toLocaleDateString('en-us', { weekday: 'short', month: 'short', day: 'numeric' });
+    setReflectionCount(prev => prev + 1);
     setMoodEntries((prev) => {
       const others = prev.filter((e) => e.date !== date);
       return [...others, { date, score, mood: moodName }];
@@ -45,7 +48,7 @@ export const MoodProvider = ({ children }) => {
   const refreshMoods = loadFromBackend;
 
   return (
-    <MoodContext.Provider value={{ moodEntries, addMoodEntry, refreshMoods }}>
+    <MoodContext.Provider value={{ moodEntries, reflectionCount, addMoodEntry, refreshMoods }}>
       {children}
     </MoodContext.Provider>
   );

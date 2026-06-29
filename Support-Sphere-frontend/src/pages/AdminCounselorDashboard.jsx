@@ -139,7 +139,9 @@ function AdminCounselorDashboard() {
                   <StatCard title="Open Crisis Alerts" value={highlights.crisis_alerts} color="red" />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard title="Total Reflections" value={analytics?.total_reflections} color="green" />
+                  <StatCard title="Students Reflected" value={analytics?.unique_students_reflected} color="blue" />
                   <StatCard title="Forum Posts" value={analytics?.forum_posts} color="blue" />
                   <StatCard title="Flagged Content" value={analytics?.flagged_content} color="red" />
                 </div>

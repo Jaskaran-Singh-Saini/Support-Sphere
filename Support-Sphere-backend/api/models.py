@@ -28,6 +28,21 @@ def create_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.create(user=instance)
 
 
+@receiver(post_save, sender=UserProfile)
+def sync_counselor_profile(sender, instance, **kwargs):
+    """Auto-create a Counselor entry when a user's role is set to counselor."""
+    if instance.role == 'counselor':
+        Counselor.objects.get_or_create(
+            user=instance.user,
+            defaults={
+                'name': instance.display_name or instance.user.get_full_name() or instance.user.username,
+                'specialty': 'General Counseling',
+                'bio': '',
+                'is_available': True,
+            }
+        )
+
+
 class Reflection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     prompt1_text = models.TextField(blank=True)
