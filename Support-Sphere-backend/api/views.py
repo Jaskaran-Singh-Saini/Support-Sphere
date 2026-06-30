@@ -62,7 +62,7 @@ def generate_willow_reply(chat_history):
         role = "Student" if message.get("sender") == "user" else "Willow"
         formatted_history += f"{role}: {message.get('text', '').strip()}\n"
 
-    model = genai.GenerativeModel("gemini-1.5-flash-latest")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = (
         "You are Willow, a compassionate wellness companion for university students in India.\n\n"
         "YOUR PERSONA:\n"
@@ -274,6 +274,8 @@ class AdminAnalyticsView(APIView):
             'forum_posts': Post.objects.count(),
             'flagged_content': Post.objects.filter(moderation_status='flagged').count()
             + Comment.objects.filter(moderation_status='flagged').count(),
+            'total_reflections': Reflection.objects.count(),
+            'unique_students_reflected': Reflection.objects.values('user').distinct().count(),
         })
 
 

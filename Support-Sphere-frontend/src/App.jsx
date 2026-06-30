@@ -27,6 +27,8 @@ import ReportConcernPage from './pages/ReportConcernPage';
 import CreatePostPage from './pages/CreatePostPage';
 
 import RegisterPage from './pages/RegisterPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -34,21 +36,22 @@ function App() {
       {/* Standalone pages (no main header) */}
       <Route path="/student/login" element={<LoginPage />} />
       <Route path="/student/register" element={<RegisterPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/counselor/dashboard" element={<CounselorDashboard />} />
-      <Route path="/counselor/student/:studentId" element={<StudentCaseFilePage />} />
+      <Route path="/counselor/dashboard" element={<ProtectedRoute requireRole="counselor"><CounselorDashboard /></ProtectedRoute>} />
+      <Route path="/counselor/student/:studentId" element={<ProtectedRoute requireRole="counselor"><StudentCaseFilePage /></ProtectedRoute>} />
       <Route path="/apply-volunteer" element={<VolunteerApplicationPage />} />
-      <Route path="/admin/dashboard" element={<AdminCounselorDashboard />} />
-      <Route path="/admin/counselor-list" element={<CounselorListPageAdmin />} />
-      <Route path="/admin/volunteer-applications" element={<AdminVolunteerApplicationsPage />} />
-      <Route path="/admin/current-volunteers" element={<CurrentVolunteersPage />} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute requireRole="admin"><AdminCounselorDashboard /></ProtectedRoute>} />
+      <Route path="/admin/counselor-list" element={<ProtectedRoute requireRole="admin"><CounselorListPageAdmin /></ProtectedRoute>} />
+      <Route path="/admin/volunteer-applications" element={<ProtectedRoute requireRole="admin"><AdminVolunteerApplicationsPage /></ProtectedRoute>} />
+      <Route path="/admin/current-volunteers" element={<ProtectedRoute requireRole="admin"><CurrentVolunteersPage /></ProtectedRoute>} />
       <Route path="/call/:counselorId" element={<CallPage />} />
       <Route path="/report-concern" element={<ReportConcernPage />} />
       <Route path="/forum/new" element={<CreatePostPage />} />
       
 
       {/* Pages with the main header layout */}
-      <Route element={<MainLayout />}>
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/reflection" element={<ReflectionPage />} />
