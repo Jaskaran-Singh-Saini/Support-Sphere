@@ -14,7 +14,7 @@ function ProtectedRoute({ children, requireRole }) {
   const { user, token } = useAuth();
   const location = useLocation();
 
-  const loginPath = requireRole === 'admin' ? '/admin/login' : '/student/login';
+  const loginPath = requireRole === 'admin' ? '/admin/login' : requireRole === 'counselor' ? '/student/login' : '/landing';
 
   // No token at all — definitely not logged in
   if (!token) {

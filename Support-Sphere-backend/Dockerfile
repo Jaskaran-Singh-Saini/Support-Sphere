@@ -1,21 +1,24 @@
-FROM python:3.12-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY package*.json ./
+RUN npm ci
 
 COPY . .
 
-RUN chmod +x entrypoint.sh
+ARG VITE_API_URL=/api
+ARG VITE_WS_URL=ws://localhost/ws
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
 
-EXPOSE 8000
+RUN npm run build
 
-ENTRYPOINT ["./entrypoint.sh"]
+FROM nginx:1.27-alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD sh -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"

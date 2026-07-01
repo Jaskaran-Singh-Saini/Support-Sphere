@@ -28,12 +28,14 @@ import CreatePostPage from './pages/CreatePostPage';
 
 import RegisterPage from './pages/RegisterPage';
 import AdminLoginPage from './pages/AdminLoginPage';
+import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
       {/* Standalone pages (no main header) */}
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/student/login" element={<LoginPage />} />
       <Route path="/student/register" element={<RegisterPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
