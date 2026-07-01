@@ -19,7 +19,9 @@ if not _SECRET_KEY:
         raise RuntimeError('DJANGO_SECRET_KEY must be set in production (DEBUG=False).')
     _SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
 SECRET_KEY = _SECRET_KEY
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()] or ['*']
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
