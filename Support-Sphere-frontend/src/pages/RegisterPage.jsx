@@ -3,130 +3,93 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { apiUrl } from '../config/api';
-import { useMood } from '../context/MoodContext';
+import { useAuth } from '../context/AuthContext';
 
-const moods = ['Awful', 'Bad', 'Okay', 'Good', 'Great'];
-
-const moodGlyphs = [
-  { name: 'Awful', color: 'text-terra', ring: 'ring-terra',
-    svg: <svg viewBox="0 0 36 36" className="w-9 h-9" fill="none"><circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.5"/><circle cx="13" cy="14" r="1.5" fill="currentColor"/><circle cx="23" cy="14" r="1.5" fill="currentColor"/><path d="M12 24c1.5-2 8.5-2 12 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 11l-2-2M23 11l2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
-  { name: 'Bad',   color: 'text-terra/70', ring: 'ring-terra/70',
-    svg: <svg viewBox="0 0 36 36" className="w-9 h-9" fill="none"><circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.5"/><circle cx="13" cy="15" r="1.5" fill="currentColor"/><circle cx="23" cy="15" r="1.5" fill="currentColor"/><path d="M13 23c1.5-1.5 8.5-1.5 10 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { name: 'Okay',  color: 'text-bark/60', ring: 'ring-bark/40',
-    svg: <svg viewBox="0 0 36 36" className="w-9 h-9" fill="none"><circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.5"/><circle cx="13" cy="15" r="1.5" fill="currentColor"/><circle cx="23" cy="15" r="1.5" fill="currentColor"/><path d="M13 22h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { name: 'Good',  color: 'text-forest', ring: 'ring-forest',
-    svg: <svg viewBox="0 0 36 36" className="w-9 h-9" fill="none"><circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.5"/><circle cx="13" cy="15" r="1.5" fill="currentColor"/><circle cx="23" cy="15" r="1.5" fill="currentColor"/><path d="M13 21c1.5 2 8.5 2 10 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { name: 'Great', color: 'text-forest', ring: 'ring-forest',
-    svg: <svg viewBox="0 0 36 36" className="w-9 h-9" fill="none"><circle cx="18" cy="18" r="17" stroke="currentColor" strokeWidth="1.5"/><circle cx="13" cy="14" r="1.5" fill="currentColor"/><circle cx="23" cy="14" r="1.5" fill="currentColor"/><path d="M11 20c1.5 4 12.5 4 14 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 11l2 2M23 11l-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
-];
-
-function ReflectionPage() {
+function RegisterPage() {
   const navigate = useNavigate();
-  const { addMoodEntry } = useMood();
-  const [prompt1, setPrompt1] = useState('');
-  const [prompt2, setPrompt2] = useState('');
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password1, setPassword1] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = async () => {
-    if (!selectedMood) {
-      toast.error('Please select a mood before saving.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password1 !== password2) {
+      toast.error('Passwords do not match.');
       return;
     }
-    setSaving(true);
+    setLoading(true);
     try {
-      await axios.post(apiUrl('/reflections/'), {
-        prompt1_text: prompt1,
-        prompt2_text: prompt2,
-        mood: selectedMood.toLowerCase(),
-      });
-      addMoodEntry(selectedMood);
-      toast.success('Reflection saved!');
-      navigate('/progress');
+      await axios.post(apiUrl('/auth/registration/'), { email, password1, password2 });
+      // Auto-login after registration
+      await login(email, password1);
+      toast.success('Account created! Welcome to Support Sphere.');
+      navigate('/onboarding');
     } catch (err) {
-      console.error('Failed to save reflection:', err);
-      toast.error('Could not save reflection. Are you logged in?');
+      const data = err.response?.data;
+      const msg = data?.email?.[0] || data?.password1?.[0] || data?.non_field_errors?.[0] || 'Registration failed.';
+      toast.error(msg);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
-      <div className="max-w-2xl mx-auto">
-        <Link to="/" className="text-blue-600 hover:underline mb-6 inline-block">
-          &larr; Back to Dashboard
-        </Link>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Today's Reflection</h1>
-          <p className="text-gray-500 mb-6">Take a moment to think about your day.</p>
-
-          <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+      <div className="max-w-md w-full mx-auto">
+        <div className="flex justify-center items-center space-x-2 mb-6">
+          <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <h1 className="text-3xl font-bold text-gray-800">Support Sphere</h1>
+        </div>
+        <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+          <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Create Account</h2>
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="prompt1" className="block text-md font-semibold text-gray-700 mb-2">
-                One thing that went well today was...
-              </label>
-              <textarea
-                id="prompt1"
-                rows="3"
-                value={prompt1}
-                onChange={(e) => setPrompt1(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Write your thoughts here..."
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+              <input
+                id="email" type="email" required value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="you@university.edu"
               />
             </div>
-
             <div>
-              <label htmlFor="prompt2" className="block text-md font-semibold text-gray-700 mb-2">
-                One thing I am grateful for is...
-              </label>
-              <textarea
-                id="prompt2"
-                rows="3"
-                value={prompt2}
-                onChange={(e) => setPrompt2(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Write your thoughts here..."
+              <label htmlFor="password1" className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                id="password1" type="password" required value={password1}
+                onChange={(e) => setPassword1(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="••••••••"
               />
             </div>
-          </div>
-
-          <div className="mt-8 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">How are you feeling today?</h2>
-            <div className="flex justify-around items-center">
-              {moodGlyphs.map((mood) => (
-                <button
-                  key={mood.name}
-                  type="button"
-                  onClick={() => setSelectedMood(mood.name)}
-                  title={mood.name}
-                  className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none ${mood.color} ${
-                    selectedMood === mood.name ? `scale-125 ring-2 ring-offset-2 ${mood.ring}` : ''
-                  }`}
-                >
-                  {mood.svg}
-                </button>
-              ))}
+            <div>
+              <label htmlFor="password2" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+              <input
+                id="password2" type="password" required value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="••••••••"
+              />
             </div>
-            {selectedMood && (
-              <p className="text-center text-sm text-gray-500 mt-3">Feeling: <span className="font-semibold text-gray-700">{selectedMood}</span></p>
-            )}
-          </div>
-
-          <div className="mt-8 text-right">
             <button
-              onClick={handleSave}
-              disabled={saving || !selectedMood}
-              className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              type="submit" disabled={loading}
+              className="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300"
             >
-              {saving ? 'Saving...' : 'Save Reflection'}
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
-          </div>
+          </form>
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/student/login" className="text-blue-600 font-medium hover:underline">Sign in</Link>
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-export default ReflectionPage;
+export default RegisterPage;
